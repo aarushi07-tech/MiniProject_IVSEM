@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Performance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .box {
+            background: white;
+            color: black;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            margin: 10px;
+        }
+
+        input {
+            width: 90%;
+            padding: 8px;
+            margin: 5px;
+        }
+
+        button {
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .progress {
+            width: 100%;
+            background: #ddd;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background: green;
+            width: 0%;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🎯 Student Performance Dashboard</h1>
+
+<div class="container">
+
+    
+    <div class="box">
+        <h3>Enter Details</h3>
+
+        <input type="number" id="study_hours" placeholder="Study Hours">
+        <input type="number" id="sleep_hours" placeholder="Sleep Hours">
+        <input type="number" id="attendance" placeholder="Attendance %">
+        <input type="number" id="internet_usage" placeholder="Internet Usage">
+        <input type="number" id="stress_level" placeholder="Stress Level">
+
+        <button onclick="predict()">Predict</button>
+
+        <div id="result"></div>
+
+        <!-- Progress Bar -->
+        <div class="progress">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+    </div>
+
+    <!-- GRAPH -->
+    <div class="box">
+        <h3>📊 Performance Graph</h3>
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <!-- SUGGESTIONS -->
+    <div class="box">
+        <h3>⚠ Suggestions</h3>
+        <ul id="suggestions"></ul>
+    </div>
+
+</div>
+
+<script>
+
+let chart;
+
+function predict() {
+
+    let data = {
+        study_hours: Number(document.getElementById("study_hours").value),
+        sleep_hours: Number(document.getElementById("sleep_hours").value),
+        attendance: Number(document.getElementById("attendance").value),
+        internet_usage: Number(document.getElementById("internet_usage").value),
+        stress_level: Number(document.getElementById("stress_level").value)
+    };
+
+    document.getElementById("result").innerText = "Predicting...";
+
+    fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+
+        // RESULT
+        let resultText = res.prediction === "PASS"
+            ? "✅ PASS"
+            : "❌ FAIL";
+
+        document.getElementById("result").innerHTML =
+            resultText + "<br>Probability: " + res.probability + "%";
+
+        
+        let bar = document.getElementById("progressBar");
+        bar.style.width = res.probability + "%";
+        bar.innerText = res.probability + "%";
+
+        
+        drawChart(data);
+
+        
+        showSuggestions(data);
+    })
+    .catch(err => {
+        console.error(err);
+        document.getElementById("result").innerText = "Error connecting backend";
+    });
+}
+
+function drawChart(data) {
+
+    if (chart) chart.destroy();
+
+    const ctx = document.getElementById("myChart");
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ["Study", "Sleep", "Attendance", "Internet", "Stress"],
+            datasets: [{
+                label: "Your Data",
+                data: [
+                    data.study_hours,
+                    data.sleep_hours,
+                    data.attendance,
+                    data.internet_usage,
+                    data.stress_level
+                ]
+            }]
+        }
+    });
+}
+
+function showSuggestions(data) {
+
+    let list = document.getElementById("suggestions");
+    list.innerHTML = "";
+
+    if (data.study_hours < 5)
+        list.innerHTML += "<li> Increase study hours</li>";
+
+    if (data.attendance < 75)
+        list.innerHTML += "<li> Improve attendance</li>";
+
+    if (data.stress_level > 7)
+        list.innerHTML += "<li> Reduce stress</li>";
+
+    if (data.sleep_hours < 6)
+        list.innerHTML += "<li> Get more sleep</li>";
+
+    if (list.innerHTML === "")
+        list.innerHTML = "<li> Everything looks good!</li>";
+}
+
+</script>
+
+</body>
+</html>
