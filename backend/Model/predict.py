@@ -1,8 +1,15 @@
+import os
 import joblib
 import numpy as np
 
-model = joblib.load("Model/model.pkl")
-scaler = joblib.load("Model/scaler.pkl")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+model_path = os.path.join(BASE_DIR, "model.pkl")
+scaler_path = os.path.join(BASE_DIR, "scaler.pkl")
+
+model = joblib.load(model_path)
+scaler = joblib.load(scaler_path)
+
 
 def predict_student(input_data):
 
